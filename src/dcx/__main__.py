@@ -201,7 +201,10 @@ if os.path.isfile("play.js"):
                 driver.get(url_target)
 
             if play_part[1] == "sleep":###ntcommand
-                time.sleep(float(play_part[2]))
+                if ppl == 2:
+                    time.sleep(3)
+                else:
+                    time.sleep(float(play_part[2]))
 
             if play_part[1] == "halt":###ntcommand
                 while True:
@@ -215,6 +218,15 @@ if os.path.isfile("play.js"):
             if play_part[1] == "click_any_const":###ntcommand
                 any_consts = [x for x in play_part[2:]]
                 constructed_xpath = "//*[" + " or ".join(["text()=\"%s\"" % x for x in any_consts]) + "]"
+                any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
+                if any_lel is None or len(any_lel) == 0:
+                    raise Exception("could not click one of %s" % str(any_consts))
+                #driver.execute_script("arguments[0].scrollIntoView(true);", any_lel[0])
+                any_lel[0].click()
+
+            if play_part[1] == "click_any_const_contains":###ntcommand
+                any_consts = [x for x in play_part[2:]]
+                constructed_xpath = "//*[" + " or ".join(["contains(., \"%s\")" % x for x in any_consts]) + "]"
                 any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
                 if any_lel is None or len(any_lel) == 0:
                     raise Exception("could not click one of %s" % str(any_consts))
