@@ -8,6 +8,8 @@ import time
 import traceback
 import subprocess
 import datetime
+import argparse
+import shutil
 
 from selenium.webdriver.firefox.options import Options as FFOptions
 from selenium.webdriver.chrome.options import Options as CHOptions
@@ -27,6 +29,18 @@ import selenium
 #from selenium.webdriver.firefox.firefox_profile import FirefoxProfile as FFProfile
 
 
+
+
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--no-dev", action="store_true", help="Disable Developer Tools Auto-Open")
+parser.add_argument("--flush-log", action="store_true", help="Flush Directory 'log' on Success")
+
+args = parser.parse_args()
+
+
 FORMAT = '%(asctime)s+00:00 %(levelname)10s: %(message)-80s    (%(filename)s,%(funcName)s:%(lineno)s)'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logging.Formatter.converter = time.gmtime
@@ -36,11 +50,11 @@ default_wait = 30
 
 
 opts = FFOptions()
-opts.add_argument("-devtools")
+
+if args.no_dev == False:
+    opts.add_argument("-devtools")
+
 opts.set_preference('media.mediasource.enabled', False)
-
-#opts.add_argument("-jsconsole")
-
 
 
 #opts = EDOptions()
@@ -137,6 +151,8 @@ def break_handler(data):
     if data == "q":
         print("QUIT")
         driver.quit()
+        if args.flush_log:
+            shutil.rmtree("log")
         sys.exit(0)
 
 # src=["b", "n"], l=2, idx=1
@@ -149,6 +165,7 @@ def expand_column(src, idx):
 
 envdata = {}
 envdata["HOME"] = os.getenv("HOME")
+envdata["PWD"] = os.getenv("PWD")
 
 if os.path.isfile("play.js"):
 
@@ -345,3 +362,6 @@ if os.path.isfile("play.js"):
 # driver.save_screenshot("test.png")
 driver.quit()
 logging.info("finished")
+
+if args.flush_log:
+    shutil.rmtree("log")
