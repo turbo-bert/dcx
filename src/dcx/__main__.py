@@ -148,6 +148,7 @@ def expand_column(src, idx):
 
 
 envdata = {}
+envdata["HOME"] = os.getenv("HOME")
 
 if os.path.isfile("play.js"):
 
@@ -202,7 +203,7 @@ if os.path.isfile("play.js"):
 
             if play_part[1] == "sleep":###ntcommand
                 if ppl == 2:
-                    time.sleep(3)
+                    time.sleep(1)
                 else:
                     time.sleep(float(play_part[2]))
 
