@@ -11,6 +11,9 @@ import datetime
 import argparse
 import shutil
 
+import rich
+from rich.console import Console
+
 from selenium.webdriver.firefox.options import Options as FFOptions
 from selenium.webdriver.chrome.options import Options as CHOptions
 from selenium.webdriver.edge.options import Options as EDOptions
@@ -28,13 +31,20 @@ from urllib.parse import urlparse
 import selenium
 #from selenium.webdriver.firefox.firefox_profile import FirefoxProfile as FFProfile
 
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--no-dev", action="store_true", help="Disable Developer Tools Auto-Open (Only Firefox)")
 parser.add_argument("--flush-log", action="store_true", help="Flush Directory 'log' on Success")
 parser.add_argument("--local-chrome", action="store_true", help="Use local 'Google Chrome' and not 'Firefox'")
 parser.add_argument("--ssl", action="store_true", help="Enforce valid SSL certificates (default without is ignoring SSL warnings, self-signed, ...)")
+parser.add_argument("--debug", action="store_true", help="If an error occurs 'go interactive' and keep the window instead of shutting down")
+parser.add_argument("--trace", action="store_true", help="If an error occurs also show a traceback")
 
 args = parser.parse_args()
+
+CONSOLE = Console()
+
 
 FORMAT = '%(asctime)s+00:00 %(levelname)10s: %(message)-80s    (%(filename)s,%(funcName)s:%(lineno)s)'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
@@ -171,6 +181,18 @@ envdata = {}
 envdata["HOME"] = os.getenv("HOME")
 envdata["PWD"] = os.getenv("PWD")
 
+
+def interactive_break():
+    while True:
+        print("*** DEBUG HALT ***")
+        break_input = input("Press RETURN (no input) to continue (leave DEBUG HALT)... $ ")
+        if break_input == "":
+            break
+        else:
+            break_handler(break_input)
+
+
+
 if os.path.isfile("play.js"):
 
     if os.path.isfile("play.env"):
@@ -190,208 +212,227 @@ if os.path.isfile("play.js"):
         ppl = len(play_part) # play part length
         play_part_i+=1
 
-        logdir_part = os.path.join(logbasedir, "parts", "part-%04d" % play_part_i)
-        os.makedirs(logdir_part, exist_ok=False)
+        try:
 
-        #pre tasks
-        viewport_png_in = os.path.join(logdir_viewport_img, 'part-%08d-in.png' % play_part_i)
-        driver.save_screenshot(viewport_png_in)
+            logdir_part = os.path.join(logbasedir, "parts", "part-%04d" % play_part_i)
+            os.makedirs(logdir_part, exist_ok=False)
 
-        if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
-            full_png_in = os.path.join(logdir_full_img, 'part-%08d-in.png' % play_part_i)
-            driver.save_full_page_screenshot(full_png_in)
+            #pre tasks
+            viewport_png_in = os.path.join(logdir_viewport_img, 'part-%08d-in.png' % play_part_i)
+            driver.save_screenshot(viewport_png_in)
 
-        if play_part[0] == None:
-            
-            if play_part[1] == "get": ###ntcommand
-                url_for_get = expand_column(play_part, 2)
-                driver.get(url_for_get)
+            if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
+                full_png_in = os.path.join(logdir_full_img, 'part-%08d-in.png' % play_part_i)
+                driver.save_full_page_screenshot(full_png_in)
 
-            if play_part[1] == "sam": ###ntcommand
-                sentence = play_part[2]
-                subprocess.call("""/bin/bash -c "say -v Samantha '%s'; exit 0" """ % sentence, shell=True)
+            if play_part[0] == None:
+                
+                if play_part[1] == "conf": ###ntcommand
+                    conf_k = play_part[2]
+                    conf_v = play_part[3]
+                    conf_ok = False
+                    
+                    if conf_k == "default_wait":
+                        default_wait = int(conf_v)
+                        logging.info("reconfig: default_wait set to %d seconds" % default_wait)
+                        conf_ok=True
+                    
+                    if conf_ok == False:
+                        raise Exception("Unable to reconfigure with - %s" % str(play_part))
 
-            if play_part[1] == "max": ###ntcommand
-                driver.maximize_window()
-                time.sleep(1)
+                if play_part[1] == "get": ###ntcommand
+                    url_for_get = expand_column(play_part, 2)
+                    driver.get(url_for_get)
 
-            if play_part[1] == "window": ###ntcommand
-                window_spec = play_part[2]
-                if window_spec == "max":
+                if play_part[1] == "sam": ###ntcommand
+                    sentence = play_part[2]
+                    subprocess.call("""/bin/bash -c "say -v Samantha '%s'; exit 0" """ % sentence, shell=True)
+
+                if play_part[1] == "max": ###ntcommand
                     driver.maximize_window()
-                if window_spec == "vga":
-                    driver.set_window_size(640, 480)
-                if window_spec == "svga":
-                    driver.set_window_size(800, 600)
-                if window_spec == "xga":
-                    driver.set_window_size(1024, 768)
-                if window_spec == "sxga":
-                    driver.set_window_size(1280, 1024)
-                if window_spec == "wuxga":
-                    driver.set_window_size(1920, 1200)
-                if window_spec == "iphone12":
-                    driver.set_window_size(390, 844)
-                time.sleep(1)
-
-            if play_part[1] == "relget": ###ntcommand
-                urlpart_for_get = expand_column(play_part, 2)
-                url_actual = driver.execute_script('return location.href;').strip().split("\n")[0].strip()
-                url_data = urlparse(url_actual)
-                url_target = url_data.scheme + "://" + url_data.netloc + urlpart_for_get
-                driver.get(url_target)
-
-            if play_part[1] == "sleep":###ntcommand
-                if ppl == 2:
                     time.sleep(1)
-                else:
-                    time.sleep(float(play_part[2]))
 
-            if play_part[1] == "halt":###ntcommand
-                while True:
-                    print("*** DEBUG HALT ***")
-                    break_input = input("Press RETURN (no input) to continue (leave DEBUG HALT)... $ ")
-                    if break_input == "":
-                        break
+                if play_part[1] == "window": ###ntcommand
+                    window_spec = play_part[2]
+                    if window_spec == "max":
+                        driver.maximize_window()
+                    if window_spec == "vga":
+                        driver.set_window_size(640, 480)
+                    if window_spec == "svga":
+                        driver.set_window_size(800, 600)
+                    if window_spec == "xga":
+                        driver.set_window_size(1024, 768)
+                    if window_spec == "sxga":
+                        driver.set_window_size(1280, 1024)
+                    if window_spec == "wuxga":
+                        driver.set_window_size(1920, 1200)
+                    if window_spec == "iphone12":
+                        driver.set_window_size(390, 844)
+                    time.sleep(1)
+
+                if play_part[1] == "relget": ###ntcommand
+                    urlpart_for_get = expand_column(play_part, 2)
+                    url_actual = driver.execute_script('return location.href;').strip().split("\n")[0].strip()
+                    url_data = urlparse(url_actual)
+                    url_target = url_data.scheme + "://" + url_data.netloc + urlpart_for_get
+                    driver.get(url_target)
+
+                if play_part[1] == "sleep":###ntcommand
+                    if ppl == 2:
+                        time.sleep(1)
                     else:
-                        break_handler(break_input)
+                        time.sleep(float(play_part[2]))
 
-            if play_part[1] == "click_any_const":###ntcommand
-                any_consts = [x for x in play_part[2:]]
-                constructed_xpath = "//*[" + " or ".join(["text()=\"%s\"" % x for x in any_consts]) + "]"
-                any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
-                if any_lel is None or len(any_lel) == 0:
-                    raise Exception("could not click one of %s" % str(any_consts))
-                #driver.execute_script("arguments[0].scrollIntoView(true);", any_lel[0])
-                any_lel[0].click()
+                if play_part[1] == "halt":###ntcommand
+                    interactive_break()
 
-            if play_part[1] == "click_any_const_contains":###ntcommand
-                any_consts = [x for x in play_part[2:]]
-                constructed_xpath = "//*[" + " or ".join(["contains(., \"%s\")" % x for x in any_consts]) + "]"
-                any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
-                if any_lel is None or len(any_lel) == 0:
-                    raise Exception("could not click one of %s" % str(any_consts))
-                #driver.execute_script("arguments[0].scrollIntoView(true);", any_lel[0])
-                any_lel[0].click()
+                if play_part[1] == "click_any_const":###ntcommand
+                    any_consts = [x for x in play_part[2:]]
+                    constructed_xpath = "//*[" + " or ".join(["text()=\"%s\"" % x for x in any_consts]) + "]"
+                    any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
+                    if any_lel is None or len(any_lel) == 0:
+                        raise Exception("could not click one of %s" % str(any_consts))
+                    #driver.execute_script("arguments[0].scrollIntoView(true);", any_lel[0])
+                    any_lel[0].click()
 
-            if play_part[1] == "click_any_const_startswith":###ntcommand
-                any_consts = [x for x in play_part[2:]]
-                constructed_xpath = "//*[" + " or ".join(["starts-with(., \"%s\")" % x for x in any_consts]) + "]"
-                logging.info(constructed_xpath)
-                any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
-                if any_lel is None or len(any_lel) == 0:
-                    raise Exception("could not click one of %s" % str(any_consts))
-                any_lel[0].click()
+                if play_part[1] == "click_any_const_contains":###ntcommand
+                    any_consts = [x for x in play_part[2:]]
+                    constructed_xpath = "//*[" + " or ".join(["contains(., \"%s\")" % x for x in any_consts]) + "]"
+                    any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
+                    if any_lel is None or len(any_lel) == 0:
+                        raise Exception("could not click one of %s" % str(any_consts))
+                    #driver.execute_script("arguments[0].scrollIntoView(true);", any_lel[0])
+                    any_lel[0].click()
 
-            if play_part[1] == "js64str":###ntcommand
-                varname = play_part[2]
-                code_plain = base64.b64decode(play_part[3]).decode("utf-8")
-                res = str(driver.execute_script(code_plain))
-                reg_write(varname, res)
+                if play_part[1] == "click_any_const_startswith":###ntcommand
+                    any_consts = [x for x in play_part[2:]]
+                    constructed_xpath = "//*[" + " or ".join(["starts-with(., \"%s\")" % x for x in any_consts]) + "]"
+                    logging.info(constructed_xpath)
+                    any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
+                    if any_lel is None or len(any_lel) == 0:
+                        raise Exception("could not click one of %s" % str(any_consts))
+                    any_lel[0].click()
 
-            if play_part[1] == "a":###ntcommand
-                varname = play_part[2]
-                res="\n".join(get_all_a_href())
-                reg_write(varname, res)
+                if play_part[1] == "js64str":###ntcommand
+                    varname = play_part[2]
+                    code_plain = base64.b64decode(play_part[3]).decode("utf-8")
+                    res = str(driver.execute_script(code_plain))
+                    reg_write(varname, res)
+
+                if play_part[1] == "a":###ntcommand
+                    varname = play_part[2]
+                    res="\n".join(get_all_a_href())
+                    reg_write(varname, res)
 
 
-        else:
-            lel = None # list of elements
-            
-            if play_part[0] == "//":
-                pass
             else:
-
-                if play_part[0].startswith("id:"):
-                    target_id = play_part[0][3:]
-                    lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.ID, target_id))
-                    #lel = driver.find_elements(BY.ID, target_id)
+                lel = None # list of elements
+                
+                if play_part[0] == "//":
+                    pass
                 else:
-                    lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, play_part[0]))
-                    #lel = driver.find_elements(BY.XPATH, play_part[0])
 
-                if play_part[1] == "a":###tcommand
-                    varname = play_part[2]
-                    res="\n".join(get_all_a_href(beneath=lel[0]))
-                    reg_write(varname, res)
+                    if play_part[0].startswith("id:"):
+                        target_id = play_part[0][3:]
+                        lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.ID, target_id))
+                        #lel = driver.find_elements(BY.ID, target_id)
+                    else:
+                        lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, play_part[0]))
+                        #lel = driver.find_elements(BY.XPATH, play_part[0])
 
-                if play_part[1] == "reg_dom":###tcommand
-                    varname = play_part[2]
-                    reg_write(varname, lel[0].get_attribute("innerHTML"))
+                    if play_part[1] == "a":###tcommand
+                        varname = play_part[2]
+                        res="\n".join(get_all_a_href(beneath=lel[0]))
+                        reg_write(varname, res)
 
-                if play_part[1] == "reg_dom1":###tcommand
-                    varname = play_part[2]
-                    reg_write(varname, lel[0].get_attribute("innerHTML").replace("><", ">\n<"))
+                    if play_part[1] == "reg_dom":###tcommand
+                        varname = play_part[2]
+                        reg_write(varname, lel[0].get_attribute("innerHTML"))
 
-                if play_part[1] == "reg_attr":###tcommand
-                    attrname = play_part[2]
-                    varname = play_part[3]
-                    res=str(lel[0].get_attribute(attrname))
-                    reg_write(varname, res)
+                    if play_part[1] == "reg_dom1":###tcommand
+                        varname = play_part[2]
+                        reg_write(varname, lel[0].get_attribute("innerHTML").replace("><", ">\n<"))
 
-                if play_part[1] == "siv":###tcommand
-                    driver.execute_script("arguments[0].scrollIntoView(true);", lel[0])
-                    time.sleep(1);
+                    if play_part[1] == "reg_attr":###tcommand
+                        attrname = play_part[2]
+                        varname = play_part[3]
+                        res=str(lel[0].get_attribute(attrname))
+                        reg_write(varname, res)
 
-                if play_part[1] == "type": ###tcommand
-                    content = expand_column(play_part, 2)
-                    # content = play_part[2]
-                    # if ppl > 3:
-                    #     content = content_provider_facade(content, play_part[3])
-                    if driver_mode.upper().find("CHROME") >= 0:
-                        logging.warn("You are using send_keys (dcx:type) for chrome which may lead to unwanted form submits - consider dcx:setvalue instead.")
-                    lel[0].send_keys(content)
+                    if play_part[1] == "siv":###tcommand
+                        driver.execute_script("arguments[0].scrollIntoView(true);", lel[0])
+                        time.sleep(1);
 
-                # kind of "clear and silent type"
-                if play_part[1] == "setvalue": ###tcommand
-                    content = expand_column(play_part, 2)
-                    # content = play_part[2]
-                    # if ppl > 3:
-                    #     content = content_provider_facade(content, play_part[3])
-                    #lel[0].send_keys(content)
-                    driver.execute_script("arguments[0].value = arguments[1];", lel[0], content)
+                    if play_part[1] == "type": ###tcommand
+                        content = expand_column(play_part, 2)
+                        # content = play_part[2]
+                        # if ppl > 3:
+                        #     content = content_provider_facade(content, play_part[3])
+                        if driver_mode.upper().find("CHROME") >= 0:
+                            logging.warn("You are using send_keys (dcx:type) for chrome which may lead to unwanted form submits - consider dcx:setvalue instead.")
+                        lel[0].send_keys(content)
 
-                if play_part[1] == "click": ###tcommand
-                    lel[0].click()
+                    # kind of "clear and silent type"
+                    if play_part[1] == "setvalue": ###tcommand
+                        content = expand_column(play_part, 2)
+                        # content = play_part[2]
+                        # if ppl > 3:
+                        #     content = content_provider_facade(content, play_part[3])
+                        #lel[0].send_keys(content)
+                        driver.execute_script("arguments[0].value = arguments[1];", lel[0], content)
 
-                if play_part[1] == "checked": ###tcommand
-                    if lel[0].is_selected() == False:
+                    if play_part[1] == "click": ###tcommand
                         lel[0].click()
 
-                if play_part[1] == "unchecked": ###tcommand
-                    if lel[0].is_selected() == True:
-                        lel[0].click()
+                    if play_part[1] == "checked": ###tcommand
+                        if lel[0].is_selected() == False:
+                            lel[0].click()
 
-                if play_part[1] == "clickif": ###tcommand
-                    e_type = play_part[2]
-                    e_contains = play_part[3]
-                    constructed_xpath = "//%s[contains(., \"%s\")]" % (e_type, e_contains)
-                    sub_lel = lel[0].find_elements(BY.XPATH, constructed_xpath)
-                    if sub_lel is None or len(sub_lel) == 0:
-                        logging.info("clickif empty")
-                    else:
-                        sub_lel[0].click()
-                    #any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
+                    if play_part[1] == "unchecked": ###tcommand
+                        if lel[0].is_selected() == True:
+                            lel[0].click()
+
+                    if play_part[1] == "clickif": ###tcommand
+                        e_type = play_part[2]
+                        e_contains = play_part[3]
+                        constructed_xpath = "//%s[contains(., \"%s\")]" % (e_type, e_contains)
+                        sub_lel = lel[0].find_elements(BY.XPATH, constructed_xpath)
+                        if sub_lel is None or len(sub_lel) == 0:
+                            logging.info("clickif empty")
+                        else:
+                            sub_lel[0].click()
+                        #any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
 
 
-                if play_part[1] == "checked01": ###tcommand
-                    varname = play_part[2]
-                    if lel[0].is_selected():
-                        reg_write(varname, '1')
-                    else:
-                        reg_write(varname, '0')
-                    logging.info("REG: %s = %s" % (varname, reg_read(varname)))
+                    if play_part[1] == "checked01": ###tcommand
+                        varname = play_part[2]
+                        if lel[0].is_selected():
+                            reg_write(varname, '1')
+                        else:
+                            reg_write(varname, '0')
+                        logging.info("REG: %s = %s" % (varname, reg_read(varname)))
 
-                if play_part[1] == "clear": ###tcommand
-                    lel[0].clear()
+                    if play_part[1] == "clear": ###tcommand
+                        lel[0].clear()
 
-        #post tasks
-        viewport_png_out = os.path.join(logdir_viewport_img, 'part-%08d-out.png' % play_part_i)
-        driver.save_screenshot(viewport_png_out)
+            #post tasks
+            viewport_png_out = os.path.join(logdir_viewport_img, 'part-%08d-out.png' % play_part_i)
+            driver.save_screenshot(viewport_png_out)
 
-        if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
-            full_png_out = os.path.join(logdir_full_img, 'part-%08d-out.png' % play_part_i)
-            driver.save_full_page_screenshot(full_png_out)
+            if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
+                full_png_out = os.path.join(logdir_full_img, 'part-%08d-out.png' % play_part_i)
+                driver.save_full_page_screenshot(full_png_out)
 
+        except Exception as exc:
+            logging.error(exc)
+
+            if args.trace:
+                CONSOLE.print_exception()
+            if args.debug:
+                interactive_break()
+            break
+
+# end of for in parts...
 
 # driver.save_screenshot("test.png")
 driver.quit()
