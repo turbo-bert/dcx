@@ -34,24 +34,52 @@ import selenium
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--gen", action="store_true", help="Generate a play.js and play.env if non existing and QUIT")
 parser.add_argument("--no-dev", action="store_true", help="Disable Developer Tools Auto-Open (Only Firefox)")
-parser.add_argument("--flush-log", action="store_true", help="Flush Directory 'log' on Success")
+parser.add_argument("--log", action="store_true", help="Don't flush directory 'log'")
 parser.add_argument("--local-chrome", action="store_true", help="Use local 'Google Chrome' and not 'Firefox'")
 parser.add_argument("--ssl", action="store_true", help="Enforce valid SSL certificates (default without is ignoring SSL warnings, self-signed, ...)")
 parser.add_argument("--debug", action="store_true", help="If an error occurs 'go interactive' and keep the window instead of shutting down")
 parser.add_argument("--trace", action="store_true", help="If an error occurs also show a traceback")
+parser.add_argument("--force", action="store_true", help="Use with caution")
 
 args = parser.parse_args()
 
 CONSOLE = Console()
 
-
 FORMAT = '%(asctime)s+00:00 %(levelname)10s: %(message)-80s    (%(filename)s,%(funcName)s:%(lineno)s)'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logging.Formatter.converter = time.gmtime
 
-default_wait = 30
+# ==================================================================================== special case "gen"
+if args.gen:
+    if os.path.isfile("play.js") and args.force == False:
+        logging.info("Won't overwrite play.js")
+        sys.exit(1)
+    else:
+        with open('play.js', 'w') as f:
+            f.write("""[
+    ["//", "========================================================================================================="],
+    ["//", "This is an example file - making it hopefully easier to start things for you when you're new to this!"],
+    ["//", "========================================================================================================="],
+    ["//", "- A play.js file is valid JSON and consists of ONLY ONE singular array (as you can see) with many, many STEPS being arrays for themselves - again"],
+    ["//", "- All columns in a STEP array are typed as string! So don't put numbers or booleans in it! (ok, first column can be real null)"],
+    ["//", "- If a STEP's first column is a double slash '//' it won't be executed. Just make sure it's still JSON..."],
+    ["//", "- 1st column of a step refers to an element with a XPath expression (beware of the escaping, JSON, ...)"],
+    ["//", "- 2st column is the actual command you want to execute - followed by any needed columns for parameters"],
+    ["//", "- Don't forget - last command must not have a trailing comma, this is JSON..."],
+    ["//", "- Your default ENV is prefilled 2 variables: $PWD, $HOME . They can directly be used in 'env' expansion for inputs, ..."],
+    ["//", "- Extend four ENV by creating a play.env file. Don't use any ticks after the '=' sign"],
+    ["//", ""],
 
+    [null, "halt"]                    
+]
+""")
+        logging.info("play.js written successfully, terminating")
+        sys.exit(0)
+# ==================================================================================== special case "gen" end
+
+default_wait = 30
 opts = FFOptions()
 
 if args.no_dev == False:
@@ -165,7 +193,7 @@ def break_handler(data):
     if data == "q":
         print("QUIT")
         driver.quit()
-        if args.flush_log:
+        if args.log == False:
             shutil.rmtree("log")
         sys.exit(0)
 
@@ -438,5 +466,5 @@ if os.path.isfile("play.js"):
 driver.quit()
 logging.info("finished")
 
-if args.flush_log:
+if args.log == False:
     shutil.rmtree("log")
