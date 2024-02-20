@@ -37,6 +37,7 @@ import selenium
 parser = argparse.ArgumentParser()
 parser.add_argument("--no-dev", action="store_true", help="Disable Developer Tools Auto-Open")
 parser.add_argument("--flush-log", action="store_true", help="Flush Directory 'log' on Success")
+parser.add_argument("--local-chrome", action="store_true", help="Flush Directory 'log' on Success")
 
 args = parser.parse_args()
 
@@ -63,7 +64,11 @@ opts.set_preference('media.mediasource.enabled', False)
 #driver = webdriver.Remote(command_executor="http://127.0.0.1:4444/wd/hub", options=opts)
 
 driver_mode = "firefox-local"
-driver = webdriver.Firefox(options=opts)
+driver = None
+if args.local_chrome:
+    driver = webdriver.Chrome()
+else:
+    driver = webdriver.Firefox(options=opts)
 
 
 logbasedir = os.path.join("log", driver_mode, datetime.datetime.today().strftime("%Y-%m-%d-%H%M%S"))
@@ -193,9 +198,9 @@ if os.path.isfile("play.js"):
         viewport_png_in = os.path.join(logdir_viewport_img, 'part-%08d-in.png' % play_part_i)
         driver.save_screenshot(viewport_png_in)
 
-        full_png_in = os.path.join(logdir_full_img, 'part-%08d-in.png' % play_part_i)
-        driver.save_full_page_screenshot(full_png_in)
-
+        if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
+            full_png_in = os.path.join(logdir_full_img, 'part-%08d-in.png' % play_part_i)
+            driver.save_full_page_screenshot(full_png_in)
 
         if play_part[0] == None:
             
@@ -355,8 +360,9 @@ if os.path.isfile("play.js"):
         viewport_png_out = os.path.join(logdir_viewport_img, 'part-%08d-out.png' % play_part_i)
         driver.save_screenshot(viewport_png_out)
 
-        full_png_out = os.path.join(logdir_full_img, 'part-%08d-out.png' % play_part_i)
-        driver.save_full_page_screenshot(full_png_out)
+        if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
+            full_png_out = os.path.join(logdir_full_img, 'part-%08d-out.png' % play_part_i)
+            driver.save_full_page_screenshot(full_png_out)
 
 
 # driver.save_screenshot("test.png")
