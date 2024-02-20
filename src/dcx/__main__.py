@@ -28,27 +28,18 @@ from urllib.parse import urlparse
 import selenium
 #from selenium.webdriver.firefox.firefox_profile import FirefoxProfile as FFProfile
 
-
-
-
-
-
-
 parser = argparse.ArgumentParser()
-parser.add_argument("--no-dev", action="store_true", help="Disable Developer Tools Auto-Open")
+parser.add_argument("--no-dev", action="store_true", help="Disable Developer Tools Auto-Open (Only Firefox)")
 parser.add_argument("--flush-log", action="store_true", help="Flush Directory 'log' on Success")
-parser.add_argument("--local-chrome", action="store_true", help="Flush Directory 'log' on Success")
+parser.add_argument("--local-chrome", action="store_true", help="Use local 'Google Chrome' and not 'Firefox'")
 
 args = parser.parse_args()
-
 
 FORMAT = '%(asctime)s+00:00 %(levelname)10s: %(message)-80s    (%(filename)s,%(funcName)s:%(lineno)s)'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logging.Formatter.converter = time.gmtime
 
-
 default_wait = 30
-
 
 opts = FFOptions()
 
@@ -63,9 +54,10 @@ opts.set_preference('media.mediasource.enabled', False)
 
 #driver = webdriver.Remote(command_executor="http://127.0.0.1:4444/wd/hub", options=opts)
 
-driver_mode = "firefox-local"
+driver_mode = "local-firefox"
 driver = None
 if args.local_chrome:
+    driver_mode = "local-chrome"
     driver = webdriver.Chrome()
 else:
     driver = webdriver.Firefox(options=opts)
@@ -320,7 +312,18 @@ if os.path.isfile("play.js"):
                     # content = play_part[2]
                     # if ppl > 3:
                     #     content = content_provider_facade(content, play_part[3])
+                    if driver_mode.upper().find("CHROME") >= 0:
+                        logging.warn("You are using send_keys (dcx:type) for chrome which may lead to unwanted form submits - consider dcx:setvalue instead.")
                     lel[0].send_keys(content)
+
+                # kind of "clear and silent type"
+                if play_part[1] == "setvalue": ###tcommand
+                    content = expand_column(play_part, 2)
+                    # content = play_part[2]
+                    # if ppl > 3:
+                    #     content = content_provider_facade(content, play_part[3])
+                    #lel[0].send_keys(content)
+                    driver.execute_script("arguments[0].value = arguments[1];", lel[0], content)
 
                 if play_part[1] == "click": ###tcommand
                     lel[0].click()
