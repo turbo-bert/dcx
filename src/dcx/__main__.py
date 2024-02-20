@@ -32,6 +32,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--no-dev", action="store_true", help="Disable Developer Tools Auto-Open (Only Firefox)")
 parser.add_argument("--flush-log", action="store_true", help="Flush Directory 'log' on Success")
 parser.add_argument("--local-chrome", action="store_true", help="Use local 'Google Chrome' and not 'Firefox'")
+parser.add_argument("--ssl", action="store_true", help="Enforce valid SSL certificates (default without is ignoring SSL warnings, self-signed, ...)")
 
 args = parser.parse_args()
 
@@ -47,7 +48,10 @@ if args.no_dev == False:
     opts.add_argument("-devtools")
 
 opts.set_preference('media.mediasource.enabled', False)
-
+if args.ssl:
+    opts.accept_insecure_certs = False
+else:
+    opts.accept_insecure_certs = True
 
 #opts = EDOptions()
 #opts = CHOptions()
@@ -58,7 +62,10 @@ driver_mode = "local-firefox"
 driver = None
 if args.local_chrome:
     driver_mode = "local-chrome"
-    driver = webdriver.Chrome()
+    chrome_options = CHOptions()
+    if args.ssl == False:
+        chrome_options.add_argument('ignore-certificate-errors')
+    driver = webdriver.Chrome(options=chrome_options)
 else:
     driver = webdriver.Firefox(options=opts)
 
@@ -206,6 +213,24 @@ if os.path.isfile("play.js"):
 
             if play_part[1] == "max": ###ntcommand
                 driver.maximize_window()
+                time.sleep(1)
+
+            if play_part[1] == "window": ###ntcommand
+                window_spec = play_part[2]
+                if window_spec == "max":
+                    driver.maximize_window()
+                if window_spec == "vga":
+                    driver.set_window_size(640, 480)
+                if window_spec == "svga":
+                    driver.set_window_size(800, 600)
+                if window_spec == "xga":
+                    driver.set_window_size(1024, 768)
+                if window_spec == "sxga":
+                    driver.set_window_size(1280, 1024)
+                if window_spec == "wuxga":
+                    driver.set_window_size(1920, 1200)
+                if window_spec == "iphone12":
+                    driver.set_window_size(390, 844)
                 time.sleep(1)
 
             if play_part[1] == "relget": ###ntcommand
