@@ -416,6 +416,12 @@ if os.path.isfile("play.js"):
                         if lel[0].is_selected() == False:
                             lel[0].click()
 
+                    if play_part[1] == "checkedjs": ###tcommand
+                        driver.execute_script("arguments[0].checked = true;", lel[0])
+
+                    if play_part[1] == "uncheckedjs": ###tcommand
+                        driver.execute_script("arguments[0].checked = false;", lel[0])
+
                     if play_part[1] == "unchecked": ###tcommand
                         if lel[0].is_selected() == True:
                             lel[0].click()
