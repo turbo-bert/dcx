@@ -11,6 +11,9 @@
     ["//", "- Your default ENV is prefilled 2 variables: $PWD, $HOME . They can directly be used in 'env' expansion for inputs, ..."],
     ["//", "- Extend four ENV by creating a play.env file. Don't use any ticks after the '=' sign"],
     ["//", ""],
+    
+    [null, "get", "https://google.de"],
+    [null, "path", "/why"],
 
     [null, "halt"]                    
 ]

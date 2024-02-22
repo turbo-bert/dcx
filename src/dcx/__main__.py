@@ -71,6 +71,9 @@ if args.gen:
     ["//", "- Your default ENV is prefilled 2 variables: $PWD, $HOME . They can directly be used in 'env' expansion for inputs, ..."],
     ["//", "- Extend four ENV by creating a play.env file. Don't use any ticks after the '=' sign"],
     ["//", ""],
+    
+    [null, "get", "https://google.de"],
+    [null, "path", "/why"],
 
     [null, "halt"]                    
 ]
@@ -253,6 +256,7 @@ if os.path.isfile("play.js"):
                 full_png_in = os.path.join(logdir_full_img, 'part-%08d-in.png' % play_part_i)
                 driver.save_full_page_screenshot(full_png_in)
 
+            unknown_command = True
             if play_part[0] == None:
                 
                 if play_part[1] == "conf": ###ntcommand
@@ -264,6 +268,7 @@ if os.path.isfile("play.js"):
                         default_wait = int(conf_v)
                         logging.info("reconfig: default_wait set to %d seconds" % default_wait)
                         conf_ok=True
+                        unknown_command=False
                     
                     if conf_ok == False:
                         raise Exception("Unable to reconfigure with - %s" % str(play_part))
@@ -271,48 +276,61 @@ if os.path.isfile("play.js"):
                 if play_part[1] == "get": ###ntcommand
                     url_for_get = expand_column(play_part, 2)
                     driver.get(url_for_get)
+                    unknown_command=False
 
                 if play_part[1] == "sam": ###ntcommand
                     sentence = play_part[2]
                     subprocess.call("""/bin/bash -c "say -v Samantha '%s'; exit 0" """ % sentence, shell=True)
+                    unknown_command=False
 
                 if play_part[1] == "max": ###ntcommand
                     driver.maximize_window()
                     time.sleep(1)
+                    unknown_command=False
 
                 if play_part[1] == "window": ###ntcommand
                     window_spec = play_part[2]
                     if window_spec == "max":
                         driver.maximize_window()
+                        unknown_command=False
                     if window_spec == "vga":
                         driver.set_window_size(640, 480)
+                        unknown_command=False
                     if window_spec == "svga":
                         driver.set_window_size(800, 600)
+                        unknown_command=False
                     if window_spec == "xga":
                         driver.set_window_size(1024, 768)
+                        unknown_command=False
                     if window_spec == "sxga":
                         driver.set_window_size(1280, 1024)
+                        unknown_command=False
                     if window_spec == "wuxga":
                         driver.set_window_size(1920, 1200)
+                        unknown_command=False
                     if window_spec == "iphone12":
                         driver.set_window_size(390, 844)
+                        unknown_command=False
                     time.sleep(1)
 
-                if play_part[1] == "relget": ###ntcommand
+                if play_part[1] == "path": ###ntcommand
                     urlpart_for_get = expand_column(play_part, 2)
                     url_actual = driver.execute_script('return location.href;').strip().split("\n")[0].strip()
                     url_data = urlparse(url_actual)
                     url_target = url_data.scheme + "://" + url_data.netloc + urlpart_for_get
                     driver.get(url_target)
+                    unknown_command=False
 
                 if play_part[1] == "sleep":###ntcommand
                     if ppl == 2:
                         time.sleep(1)
                     else:
                         time.sleep(float(play_part[2]))
+                    unknown_command=False
 
                 if play_part[1] == "halt":###ntcommand
                     interactive_break()
+                    unknown_command=False
 
                 if play_part[1] == "click_any_const":###ntcommand
                     any_consts = [x for x in play_part[2:]]
@@ -322,6 +340,7 @@ if os.path.isfile("play.js"):
                         raise Exception("could not click one of %s" % str(any_consts))
                     #driver.execute_script("arguments[0].scrollIntoView(true);", any_lel[0])
                     any_lel[0].click()
+                    unknown_command=False
 
                 if play_part[1] == "click_any_const_contains":###ntcommand
                     any_consts = [x for x in play_part[2:]]
@@ -331,6 +350,7 @@ if os.path.isfile("play.js"):
                         raise Exception("could not click one of %s" % str(any_consts))
                     #driver.execute_script("arguments[0].scrollIntoView(true);", any_lel[0])
                     any_lel[0].click()
+                    unknown_command=False
 
                 if play_part[1] == "click_any_const_startswith":###ntcommand
                     any_consts = [x for x in play_part[2:]]
@@ -340,56 +360,62 @@ if os.path.isfile("play.js"):
                     if any_lel is None or len(any_lel) == 0:
                         raise Exception("could not click one of %s" % str(any_consts))
                     any_lel[0].click()
+                    unknown_command=False
 
                 if play_part[1] == "js64str":###ntcommand
                     varname = play_part[2]
                     code_plain = base64.b64decode(play_part[3]).decode("utf-8")
                     res = str(driver.execute_script(code_plain))
                     reg_write(varname, res)
+                    unknown_command=False
 
                 if play_part[1] == "a":###ntcommand
                     varname = play_part[2]
                     res="\n".join(get_all_a_href())
                     reg_write(varname, res)
+                    unknown_command=False
 
 
             else:
                 lel = None # list of elements
                 
                 if play_part[0] == "//":
-                    pass
+                    unknown_command=False
                 else:
 
                     if play_part[0].startswith("id:"):
                         target_id = play_part[0][3:]
                         lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.ID, target_id))
-                        #lel = driver.find_elements(BY.ID, target_id)
                     else:
                         lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, play_part[0]))
-                        #lel = driver.find_elements(BY.XPATH, play_part[0])
 
                     if play_part[1] == "a":###tcommand
                         varname = play_part[2]
                         res="\n".join(get_all_a_href(beneath=lel[0]))
                         reg_write(varname, res)
+                        unknown_command=False
 
                     if play_part[1] == "reg_dom":###tcommand
                         varname = play_part[2]
                         reg_write(varname, lel[0].get_attribute("innerHTML"))
+                        unknown_command=False
 
                     if play_part[1] == "reg_dom1":###tcommand
                         varname = play_part[2]
                         reg_write(varname, lel[0].get_attribute("innerHTML").replace("><", ">\n<"))
+                        unknown_command=False
 
                     if play_part[1] == "reg_attr":###tcommand
                         attrname = play_part[2]
                         varname = play_part[3]
                         res=str(lel[0].get_attribute(attrname))
                         reg_write(varname, res)
+                        unknown_command=False
 
                     if play_part[1] == "siv":###tcommand
                         driver.execute_script("arguments[0].scrollIntoView(true);", lel[0])
                         time.sleep(1);
+                        unknown_command=False
 
                     if play_part[1] == "type": ###tcommand
                         content = expand_column(play_part, 2)
@@ -399,6 +425,7 @@ if os.path.isfile("play.js"):
                         if driver_mode.upper().find("CHROME") >= 0:
                             logging.warn("You are using send_keys (dcx:type) for chrome which may lead to unwanted form submits - consider dcx:setvalue instead.")
                         lel[0].send_keys(content)
+                        unknown_command=False
 
                     # kind of "clear and silent type"
                     if play_part[1] == "setvalue": ###tcommand
@@ -408,23 +435,29 @@ if os.path.isfile("play.js"):
                         #     content = content_provider_facade(content, play_part[3])
                         #lel[0].send_keys(content)
                         driver.execute_script("arguments[0].value = arguments[1];", lel[0], content)
+                        unknown_command=False
 
                     if play_part[1] == "click": ###tcommand
                         lel[0].click()
+                        unknown_command=False
 
                     if play_part[1] == "checked": ###tcommand
                         if lel[0].is_selected() == False:
                             lel[0].click()
+                        unknown_command=False
 
                     if play_part[1] == "checkedjs": ###tcommand
                         driver.execute_script("arguments[0].checked = true;", lel[0])
+                        unknown_command=False
 
                     if play_part[1] == "uncheckedjs": ###tcommand
                         driver.execute_script("arguments[0].checked = false;", lel[0])
+                        unknown_command=False
 
                     if play_part[1] == "unchecked": ###tcommand
                         if lel[0].is_selected() == True:
                             lel[0].click()
+                        unknown_command=False
 
                     if play_part[1] == "clickif": ###tcommand
                         e_type = play_part[2]
@@ -436,6 +469,7 @@ if os.path.isfile("play.js"):
                         else:
                             sub_lel[0].click()
                         #any_lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, constructed_xpath))
+                        unknown_command=False
 
 
                     if play_part[1] == "checked01": ###tcommand
@@ -445,9 +479,14 @@ if os.path.isfile("play.js"):
                         else:
                             reg_write(varname, '0')
                         logging.info("REG: %s = %s" % (varname, reg_read(varname)))
+                        unknown_command=False
 
                     if play_part[1] == "clear": ###tcommand
                         lel[0].clear()
+                        unknown_command=False
+            
+            if unknown_command:
+                raise Exception("Command '%s' is unknown" % play_part[1])
 
             #post tasks
             viewport_png_out = os.path.join(logdir_viewport_img, 'part-%08d-out.png' % play_part_i)
