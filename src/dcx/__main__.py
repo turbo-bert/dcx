@@ -259,6 +259,18 @@ if os.path.isfile("play.js"):
             unknown_command = True
             if play_part[0] == None:
                 
+                if play_part[1] == "bash": ###ntcommand
+                    bash_command = expand_column(play_part, 2)
+                    logging.info("Will execute bash with '%s'" % bash_command)
+                    bash_o = subprocess.check_output("""/bin/bash -c '%s'""" % bash_command, shell=True, universal_newlines=True)
+                    unknown_command=False
+
+                if play_part[1] == "bash0": ###ntcommand
+                    bash_command = expand_column(play_part, 2)
+                    logging.info("Will execute bash with '%s'" % bash_command)
+                    bash_o = subprocess.check_output("""/bin/bash -c '%s; exit 0'""" % bash_command, shell=True, universal_newlines=True)
+                    unknown_command=False
+
                 if play_part[1] == "conf": ###ntcommand
                     conf_k = play_part[2]
                     conf_v = play_part[3]
@@ -369,11 +381,11 @@ if os.path.isfile("play.js"):
                     reg_write(varname, res)
                     unknown_command=False
 
-                if play_part[1] == "a":###ntcommand
-                    varname = play_part[2]
-                    res="\n".join(get_all_a_href())
-                    reg_write(varname, res)
-                    unknown_command=False
+                # if play_part[1] == "a":###ntcommand
+                #     varname = play_part[2]
+                #     res="\n".join(get_all_a_href())
+                #     reg_write(varname, res)
+                #     unknown_command=False
 
 
             else:
@@ -389,11 +401,11 @@ if os.path.isfile("play.js"):
                     else:
                         lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, play_part[0]))
 
-                    if play_part[1] == "a":###tcommand
-                        varname = play_part[2]
-                        res="\n".join(get_all_a_href(beneath=lel[0]))
-                        reg_write(varname, res)
-                        unknown_command=False
+                    # if play_part[1] == "a":###tcommand
+                    #     varname = play_part[2]
+                    #     res="\n".join(get_all_a_href(beneath=lel[0]))
+                    #     reg_write(varname, res)
+                    #     unknown_command=False
 
                     if play_part[1] == "reg_dom":###tcommand
                         varname = play_part[2]
