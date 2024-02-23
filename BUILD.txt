@@ -1,0 +1,4 @@
+- Bump Version VERSION
+- Run doc/run and runref
+- Commit
+- Publish
