@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-02-24 Sat 00:59 -->
+<!-- 2024-02-24 Sat 01:57 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>&lrm;</title>
@@ -199,14 +199,210 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org344e1b9">1. Command Overview</a></li>
+<li><a href="#org91e3683">1. GETTING STARTED</a>
+<ul>
+<li><a href="#org89bea25">1.1. INSTALLATION</a></li>
+<li><a href="#orgc46ea95">1.2. WORKFLOW DEFINITION FORMAT</a>
+<ul>
+<li><a href="#org76b6237">1.2.1. DIRECTORY STRUCTURE</a></li>
+<li><a href="#orgcb397fd">1.2.2. FILE FORMAT</a></li>
+<li><a href="#orgb4de953">1.2.3. MINIMAL EXAMPLE <code>play.js</code></a></li>
+</ul>
+</li>
+<li><a href="#org822a700">1.3. CREATE NEW WORKFLOW</a></li>
+<li><a href="#org5e5b814">1.4. RUN THE NEW WORKFLOW</a></li>
+<li><a href="#orga2c161d">1.5. DIRECTORY <code>log</code> AFTER EXECUTION</a></li>
+</ul>
+</li>
+<li><a href="#org1f9f4b6">2. COMMAND REFERENCE</a>
+<ul>
+<li><a href="#orga539ad2">2.1. OVERVIEW</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org344e1b9" class="outline-2">
-<h2 id="org344e1b9"><span class="section-number-2">1.</span> Command Overview</h2>
+<div id="outline-container-org91e3683" class="outline-2">
+<h2 id="org91e3683"><span class="section-number-2">1.</span> GETTING STARTED</h2>
 <div class="outline-text-2" id="text-1">
+</div>
+<div id="outline-container-org89bea25" class="outline-3">
+<h3 id="org89bea25"><span class="section-number-3">1.1.</span> INSTALLATION</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+You have (obviously) managed to install <code>dcx</code> already. Great!
+</p>
+
+<p>
+I recommend putting a starter bash script somewhere in your <code>PATH</code>, so you can just run <code>dcx</code> without the python venv init.
+</p>
+
+<p>
+For example, you could have a <code>dcx</code> file beneath <code>/usr/local/bin/</code> (change your venv path if necessary):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">#!/bin/bash
+
+. ~/venv/bin/activate
+python -m dcx "$@"
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc46ea95" class="outline-3">
+<h3 id="orgc46ea95"><span class="section-number-3">1.2.</span> WORKFLOW DEFINITION FORMAT</h3>
+<div class="outline-text-3" id="text-1-2">
+</div>
+<div id="outline-container-org76b6237" class="outline-4">
+<h4 id="org76b6237"><span class="section-number-4">1.2.1.</span> DIRECTORY STRUCTURE</h4>
+<div class="outline-text-4" id="text-1-2-1">
+<p>
+A workflow consists (in its most simple form) of exactly <b>one file</b> named <code>play.js</code> in your working directory.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgcb397fd" class="outline-4">
+<h4 id="orgcb397fd"><span class="section-number-4">1.2.2.</span> FILE FORMAT</h4>
+<div class="outline-text-4" id="text-1-2-2">
+<p>
+<code>play.js</code> is JSON with <b>only</b> one root element, an array <code>[]</code>.
+</p>
+
+<p>
+This array stores all linear executed <code>play_steps</code>, which themselves are arrays, again. They will later be executed in-order from top to bottom.
+</p>
+
+<p>
+Basic <code>play.js</code> structural (still no content):
+</p>
+<div class="org-src-container">
+<pre class="src src-javascript">[
+  [],
+  [],
+  []
+]
+</pre>
+</div>
+
+<p>
+These <b>inner</b> arrays (the <code>play_steps</code>) ALWAYS consist of at least 2 columns.
+</p>
+
+<p>
+1st column: <code>"JSON encoded XPath String" | null</code>
+</p>
+
+<p>
+2nd column: <code>COMMAND</code> name, as String
+</p>
+
+<p>
+3rd, 4th, &#x2026; column: (Optional) positional parameters for the used <code>COMMAND</code>.
+</p>
+
+<p>
+Note: All columns <b>have to be</b> JSON Strings (with the exception of the 1st, which can be JSON:null in case of a <code>COMMAND</code> that does not relate to any website-element).
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb4de953" class="outline-4">
+<h4 id="orgb4de953"><span class="section-number-4">1.2.3.</span> MINIMAL EXAMPLE <code>play.js</code></h4>
+<div class="outline-text-4" id="text-1-2-3">
+<p>
+This example may give you a better idea:
+</p>
+
+<p>
+<code>play.js</code>:
+</p>
+<div class="org-src-container">
+<pre class="src src-javascript">[
+  [null, "get", "https://127.0.0.1:8080/"],
+  [null, "halt"]
+]
+</pre>
+</div>
+
+<p>
+What you see is an example play with only 2 command invocations.
+</p>
+
+<p>
+The 1st command is <code>get</code>, which equals to typing the following URL into your address bar and opening it.
+</p>
+
+<p>
+The 2nd command keeps the browser open and your commandline going into kind of an <b>interactive</b> mode. Without the <code>halt</code> command, your browser would immediately close and disappear after opening the URL from the previous step. To skip out the interactive prompt, just press RETURN.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org822a700" class="outline-3">
+<h3 id="org822a700"><span class="section-number-3">1.3.</span> CREATE NEW WORKFLOW</h3>
+<div class="outline-text-3" id="text-1-3">
+<p>
+Creating a new workflow/test/play (whatever you want to call it) should always happen in a new empty directory.
+</p>
+
+<p>
+To make it a little easier to start, you can run
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">mkdir EXAMPLE_WORKFLOW
+cd EXAMPLE_WORKFLOW
+dcx --gen
+</pre>
+</div>
+
+<p>
+to create a simple sample <code>play.js</code> file in your new working directory (here: <code>EXAMPLE_WORKFLOW</code>).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5e5b814" class="outline-3">
+<h3 id="org5e5b814"><span class="section-number-3">1.4.</span> RUN THE NEW WORKFLOW</h3>
+<div class="outline-text-3" id="text-1-4">
+<p>
+Before you start, you need to know which browser to use. Invoking just plain <code>dcx</code> will try firefox. You can override this behaviour by adding <code>--local-chrome</code> to use chrome instead.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">cd EXAMPLE_WORKFLOW
+dcx                    # for firefox
+dcx --local-chrome     # for chrome
+</pre>
+</div>
+
+<p>
+Note: The directory <code>log</code> will be created during runtime - and deleted automatically. IF YOU WANT TO KEEP IT FOR INSPECTION, ADD <code>--log</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga2c161d" class="outline-3">
+<h3 id="orga2c161d"><span class="section-number-3">1.5.</span> DIRECTORY <code>log</code> AFTER EXECUTION</h3>
+<div class="outline-text-3" id="text-1-5">
+<p>
+WARNING: By-default the <code>log</code> directory will always be removed (recursive, no-prompt).
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org1f9f4b6" class="outline-2">
+<h2 id="org1f9f4b6"><span class="section-number-2">2.</span> COMMAND REFERENCE</h2>
+<div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-orga539ad2" class="outline-3">
+<h3 id="orga539ad2"><span class="section-number-3">2.1.</span> OVERVIEW</h3>
+<div class="outline-text-3" id="text-2-1">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -319,8 +515,9 @@
 </div>
 </div>
 </div>
+</div>
 <div id="postamble" class="status">
-<p class="date">Created: 2024-02-24 Sat 00:59</p>
+<p class="date">Created: 2024-02-24 Sat 01:57</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
