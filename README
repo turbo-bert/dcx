@@ -1,0 +1,214 @@
+Table of Contents
+_________________
+
+1. GETTING STARTED
+.. 1. INSTALLATION
+..... 1. Windows
+.. 2. POST-INSTALLATION
+.. 3. WORKFLOW DEFINITION FORMAT
+..... 1. DIRECTORY STRUCTURE
+..... 2. FILE FORMAT
+..... 3. MINIMAL EXAMPLE `play.js'
+.. 4. CREATE NEW WORKFLOW
+.. 5. RUN THE NEW WORKFLOW
+.. 6. DIRECTORY `log' AFTER EXECUTION
+2. COMMAND REFERENCE
+.. 1. OVERVIEW
+
+
+
+
+
+1 GETTING STARTED
+=================
+
+1.1 INSTALLATION
+~~~~~~~~~~~~~~~~
+
+1.1.1 Windows
+-------------
+
+  Install a recent `python3' (LTS releases recommended from the original
+  website <https://www.python.org/downloads/windows/>) and run `pip
+  install dcx' afterwards. Note: It is possible to have your python
+  installed in your user's realm without the need for administrator
+  privileges.
+
+  In a commandline or terminal where you have access to `python' you can
+  then simply start the dcx cli by running:
+
+  ,----
+  | python -m dcx
+  `----
+
+  or perhaps with more parameters (similar to `--help'):
+
+  ,----
+  | python -m dcx --help
+  `----
+
+
+1.2 POST-INSTALLATION
+~~~~~~~~~~~~~~~~~~~~~
+
+  You have (obviously) managed to install `dcx' already. Great!
+
+  I recommend putting a starter bash script somewhere in your `PATH', so
+  you can just run `dcx' without the python venv init.
+
+  For example, you could have a `dcx' file beneath `/usr/local/bin/'
+  (change your venv path if necessary):
+
+  ,----
+  | #!/bin/bash
+  | 
+  | . ~/venv/bin/activate
+  | python -m dcx "$@"
+  `----
+
+
+1.3 WORKFLOW DEFINITION FORMAT
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1.3.1 DIRECTORY STRUCTURE
+-------------------------
+
+  A workflow consists (in its most simple form) of exactly *one file*
+  named `play.js' in your working directory.
+
+
+1.3.2 FILE FORMAT
+-----------------
+
+  `play.js' is JSON with *only* one root element, an array `[]'.
+
+  This array stores all linear executed `play_steps', which themselves
+  are arrays, again. They will later be executed in-order from top to
+  bottom.
+
+  Basic `play.js' structural (still no content):
+  ,----
+  | [
+  |   [],
+  |   [],
+  |   []
+  | ]
+  `----
+
+  These *inner* arrays (the `play_steps') ALWAYS consist of at least 2
+  columns.
+
+  1st column: `"JSON encoded XPath String" | null'
+
+  2nd column: `COMMAND' name, as String
+
+  3rd, 4th, ... column: (Optional) positional parameters for the used
+  `COMMAND'.
+
+  Note: All columns *have to be* JSON Strings (with the exception of the
+  1st, which can be JSON:null in case of a `COMMAND' that does not
+  relate to any website-element).
+
+
+1.3.3 MINIMAL EXAMPLE `play.js'
+-------------------------------
+
+  This example may give you a better idea:
+
+  `play.js':
+  ,----
+  | [
+  |   [null, "get", "https://127.0.0.1:8080/"],
+  |   [null, "halt"]
+  | ]
+  `----
+
+  What you see is an example play with only 2 command invocations.
+
+  The 1st command is `get', which equals to typing the following URL
+  into your address bar and opening it.
+
+  The 2nd command keeps the browser open and your commandline going into
+  kind of an *interactive* mode. Without the `halt' command, your
+  browser would immediately close and disappear after opening the URL
+  from the previous step. To skip out the interactive prompt, just press
+  RETURN.
+
+
+1.4 CREATE NEW WORKFLOW
+~~~~~~~~~~~~~~~~~~~~~~~
+
+  Creating a new workflow/test/play (whatever you want to call it)
+  should always happen in a new empty directory.
+
+  To make it a little easier to start, you can run
+
+  ,----
+  | mkdir EXAMPLE_WORKFLOW
+  | cd EXAMPLE_WORKFLOW
+  | dcx --gen
+  `----
+
+  to create a simple sample `play.js' file in your new working directory
+  (here: `EXAMPLE_WORKFLOW').
+
+
+1.5 RUN THE NEW WORKFLOW
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Before you start, you need to know which browser to use. Invoking just
+  plain `dcx' will try firefox. You can override this behaviour by
+  adding `--local-chrome' to use chrome instead.
+
+  ,----
+  | cd EXAMPLE_WORKFLOW
+  | dcx                    # for firefox
+  | dcx --local-chrome     # for chrome
+  `----
+
+  Note: The directory `log' will be created during runtime - and deleted
+  automatically. IF YOU WANT TO KEEP IT FOR INSPECTION, ADD `--log'.
+
+
+1.6 DIRECTORY `log' AFTER EXECUTION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  WARNING: By-default the `log' directory will always be removed
+  (recursive, no-prompt).
+
+
+2 COMMAND REFERENCE
+===================
+
+2.1 OVERVIEW
+~~~~~~~~~~~~
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   Command             Description                                              Example                                                              
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `attribute_setenv'  Add specified element's attribute to ENV                 `["id:button9", "attribute_setenv", "class", "BUTTON9_CSS_CLASSES"]' 
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `bash'              Execute a bash command without single tics               `[null, "bash", "uptime > aha"]'                                     
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `bash0'             Execute a bash command without single tics and return 0  `[null, "bash", "echo ok; exit 1"]'                                  
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `clear'             Empty `<INPUT>' or `<TEXTAREA>'                          `["id:firstname", "clear"]'                                          
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `click'             Click on element CENTER                                  `["id:btn-submit", "click"]'                                         
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `get'               Open a URL                                               `[null, "get", "https://www.google.de"]'                             
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `halt'              Enter breakpoint                                         `[null, "halt"]'                                                     
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `path'              Open a PATH/URL von the same server/host                 `[null, "path", "/info.html"]'                                       
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `sam'               Use `say -v Samantha <...>' to speak on macos            `[null, "sam", "all system nominal"]'                                
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `setenv'            Add or change ENV parameters during runtime              `[null, "setenv", "PARAM_X", "1234"]'                                
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `setvalue'          Set form values via javascript and not sending keys      `["id:inputfield8", "setvalue", "John Doe"]'                         
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `sleep'             Freeze Execution for Specified Seconds                   `[null, "sleep", "8"]'                                               
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+   `type'              Send keys to element                                     `["id:funkyfield", "type", "Hello"]'                                 
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
