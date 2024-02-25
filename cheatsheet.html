@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-02-24 Sat 20:00 -->
+<!-- 2024-02-25 Sun 23:00 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>&lrm;</title>
@@ -199,45 +199,45 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org831f696">1. GETTING STARTED</a>
+<li><a href="#orgc12624a">1. GETTING STARTED</a>
 <ul>
-<li><a href="#org8a19bcf">1.1. INSTALLATION</a>
+<li><a href="#org1b524b3">1.1. INSTALLATION</a>
 <ul>
-<li><a href="#orga32bb2c">1.1.1. Windows</a></li>
+<li><a href="#orgd076baf">1.1.1. Windows</a></li>
 </ul>
 </li>
-<li><a href="#orgb0187b7">1.2. POST-INSTALLATION</a></li>
-<li><a href="#org8436a13">1.3. WORKFLOW DEFINITION FORMAT</a>
+<li><a href="#orgc97f9d4">1.2. POST-INSTALLATION</a></li>
+<li><a href="#org9a8ecbd">1.3. WORKFLOW DEFINITION FORMAT</a>
 <ul>
-<li><a href="#org905ac2e">1.3.1. DIRECTORY STRUCTURE</a></li>
-<li><a href="#orgeeb8c8d">1.3.2. FILE FORMAT</a></li>
-<li><a href="#org19fe22f">1.3.3. MINIMAL EXAMPLE <code>play.js</code></a></li>
+<li><a href="#orgcbe7443">1.3.1. DIRECTORY STRUCTURE</a></li>
+<li><a href="#orgbc3e6d4">1.3.2. FILE FORMAT</a></li>
+<li><a href="#orgd361f49">1.3.3. MINIMAL EXAMPLE <code>play.js</code></a></li>
 </ul>
 </li>
-<li><a href="#org4c2461d">1.4. CREATE NEW WORKFLOW</a></li>
-<li><a href="#org3a9aeb9">1.5. RUN THE NEW WORKFLOW</a></li>
-<li><a href="#org9296d15">1.6. DIRECTORY <code>log</code> AFTER EXECUTION</a></li>
+<li><a href="#org1f8863f">1.4. CREATE NEW WORKFLOW</a></li>
+<li><a href="#org9c995a8">1.5. RUN THE NEW WORKFLOW</a></li>
+<li><a href="#org6a82e69">1.6. DIRECTORY <code>log</code> AFTER EXECUTION</a></li>
 </ul>
 </li>
-<li><a href="#org19a6b00">2. COMMAND REFERENCE</a>
+<li><a href="#org19ff304">2. COMMAND REFERENCE</a>
 <ul>
-<li><a href="#org291ed9b">2.1. OVERVIEW</a></li>
+<li><a href="#orgc4d293c">2.1. OVERVIEW</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org831f696" class="outline-2">
-<h2 id="org831f696"><span class="section-number-2">1.</span> GETTING STARTED</h2>
+<div id="outline-container-orgc12624a" class="outline-2">
+<h2 id="orgc12624a"><span class="section-number-2">1.</span> GETTING STARTED</h2>
 <div class="outline-text-2" id="text-1">
 </div>
-<div id="outline-container-org8a19bcf" class="outline-3">
-<h3 id="org8a19bcf"><span class="section-number-3">1.1.</span> INSTALLATION</h3>
+<div id="outline-container-org1b524b3" class="outline-3">
+<h3 id="org1b524b3"><span class="section-number-3">1.1.</span> INSTALLATION</h3>
 <div class="outline-text-3" id="text-1-1">
 </div>
-<div id="outline-container-orga32bb2c" class="outline-4">
-<h4 id="orga32bb2c"><span class="section-number-4">1.1.1.</span> Windows</h4>
+<div id="outline-container-orgd076baf" class="outline-4">
+<h4 id="orgd076baf"><span class="section-number-4">1.1.1.</span> Windows</h4>
 <div class="outline-text-4" id="text-1-1-1">
 <p>
 Install a recent <code>python3</code> (LTS releases recommended from the original website <a href="https://www.python.org/downloads/windows/">https://www.python.org/downloads/windows/</a>) and run <code>pip install dcx</code> afterwards. Note: It is possible to have your python installed in your user's realm without the need for administrator privileges.
@@ -262,8 +262,8 @@ python -m dcx --help
 </div>
 </div>
 
-<div id="outline-container-orgb0187b7" class="outline-3">
-<h3 id="orgb0187b7"><span class="section-number-3">1.2.</span> POST-INSTALLATION</h3>
+<div id="outline-container-orgc97f9d4" class="outline-3">
+<h3 id="orgc97f9d4"><span class="section-number-3">1.2.</span> POST-INSTALLATION</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 You have (obviously) managed to install <code>dcx</code> already. Great!
@@ -287,12 +287,12 @@ python -m dcx "$@"
 </div>
 </div>
 
-<div id="outline-container-org8436a13" class="outline-3">
-<h3 id="org8436a13"><span class="section-number-3">1.3.</span> WORKFLOW DEFINITION FORMAT</h3>
+<div id="outline-container-org9a8ecbd" class="outline-3">
+<h3 id="org9a8ecbd"><span class="section-number-3">1.3.</span> WORKFLOW DEFINITION FORMAT</h3>
 <div class="outline-text-3" id="text-1-3">
 </div>
-<div id="outline-container-org905ac2e" class="outline-4">
-<h4 id="org905ac2e"><span class="section-number-4">1.3.1.</span> DIRECTORY STRUCTURE</h4>
+<div id="outline-container-orgcbe7443" class="outline-4">
+<h4 id="orgcbe7443"><span class="section-number-4">1.3.1.</span> DIRECTORY STRUCTURE</h4>
 <div class="outline-text-4" id="text-1-3-1">
 <p>
 A workflow consists (in its most simple form) of exactly <b>one file</b> named <code>play.js</code> in your working directory.
@@ -300,8 +300,8 @@ A workflow consists (in its most simple form) of exactly <b>one file</b> named <
 </div>
 </div>
 
-<div id="outline-container-orgeeb8c8d" class="outline-4">
-<h4 id="orgeeb8c8d"><span class="section-number-4">1.3.2.</span> FILE FORMAT</h4>
+<div id="outline-container-orgbc3e6d4" class="outline-4">
+<h4 id="orgbc3e6d4"><span class="section-number-4">1.3.2.</span> FILE FORMAT</h4>
 <div class="outline-text-4" id="text-1-3-2">
 <p>
 <code>play.js</code> is JSON with <b>only</b> one root element, an array <code>[]</code>.
@@ -345,8 +345,8 @@ Note: All columns <b>have to be</b> JSON Strings (with the exception of the 1st,
 </div>
 </div>
 
-<div id="outline-container-org19fe22f" class="outline-4">
-<h4 id="org19fe22f"><span class="section-number-4">1.3.3.</span> MINIMAL EXAMPLE <code>play.js</code></h4>
+<div id="outline-container-orgd361f49" class="outline-4">
+<h4 id="orgd361f49"><span class="section-number-4">1.3.3.</span> MINIMAL EXAMPLE <code>play.js</code></h4>
 <div class="outline-text-4" id="text-1-3-3">
 <p>
 This example may give you a better idea:
@@ -378,8 +378,8 @@ The 2nd command keeps the browser open and your commandline going into kind of a
 </div>
 </div>
 
-<div id="outline-container-org4c2461d" class="outline-3">
-<h3 id="org4c2461d"><span class="section-number-3">1.4.</span> CREATE NEW WORKFLOW</h3>
+<div id="outline-container-org1f8863f" class="outline-3">
+<h3 id="org1f8863f"><span class="section-number-3">1.4.</span> CREATE NEW WORKFLOW</h3>
 <div class="outline-text-3" id="text-1-4">
 <p>
 Creating a new workflow/test/play (whatever you want to call it) should always happen in a new empty directory.
@@ -402,8 +402,8 @@ to create a simple sample <code>play.js</code> file in your new working director
 </div>
 </div>
 
-<div id="outline-container-org3a9aeb9" class="outline-3">
-<h3 id="org3a9aeb9"><span class="section-number-3">1.5.</span> RUN THE NEW WORKFLOW</h3>
+<div id="outline-container-org9c995a8" class="outline-3">
+<h3 id="org9c995a8"><span class="section-number-3">1.5.</span> RUN THE NEW WORKFLOW</h3>
 <div class="outline-text-3" id="text-1-5">
 <p>
 Before you start, you need to know which browser to use. Invoking just plain <code>dcx</code> will try firefox. You can override this behaviour by adding <code>--local-chrome</code> to use chrome instead.
@@ -422,8 +422,8 @@ Note: The directory <code>log</code> will be created during runtime - and delete
 </div>
 </div>
 
-<div id="outline-container-org9296d15" class="outline-3">
-<h3 id="org9296d15"><span class="section-number-3">1.6.</span> DIRECTORY <code>log</code> AFTER EXECUTION</h3>
+<div id="outline-container-org6a82e69" class="outline-3">
+<h3 id="org6a82e69"><span class="section-number-3">1.6.</span> DIRECTORY <code>log</code> AFTER EXECUTION</h3>
 <div class="outline-text-3" id="text-1-6">
 <p>
 WARNING: By-default the <code>log</code> directory will always be removed (recursive, no-prompt).
@@ -431,12 +431,12 @@ WARNING: By-default the <code>log</code> directory will always be removed (recur
 </div>
 </div>
 </div>
-<div id="outline-container-org19a6b00" class="outline-2">
-<h2 id="org19a6b00"><span class="section-number-2">2.</span> COMMAND REFERENCE</h2>
+<div id="outline-container-org19ff304" class="outline-2">
+<h2 id="org19ff304"><span class="section-number-2">2.</span> COMMAND REFERENCE</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-org291ed9b" class="outline-3">
-<h3 id="org291ed9b"><span class="section-number-3">2.1.</span> OVERVIEW</h3>
+<div id="outline-container-orgc4d293c" class="outline-3">
+<h3 id="orgc4d293c"><span class="section-number-3">2.1.</span> OVERVIEW</h3>
 <div class="outline-text-3" id="text-2-1">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -552,7 +552,7 @@ WARNING: By-default the <code>log</code> directory will always be removed (recur
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2024-02-24 Sat 20:00</p>
+<p class="date">Created: 2024-02-25 Sun 23:00</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
