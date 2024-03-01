@@ -44,8 +44,16 @@ figlet = base64.b64decode(const_figlet).decode()
 parser = argparse.ArgumentParser(prog="dcx", epilog=epilog, formatter_class=argparse.RawTextHelpFormatter, description="DAISY CHAINED XPATH processor (v%s) - commandline tool to run JSON defined selenium scripts.\n\n%s\n" % (const_appversion, figlet))
 parser.add_argument("--gen", action="store_true", help="Generate a play.js and play.env if non existing and QUIT")
 parser.add_argument("--no-dev", action="store_true", help="Disable Developer Tools Auto-Open (Only Firefox)")
+parser.add_argument("--no-img", action="store_true", help="Disable screenshots")
 parser.add_argument("--log", action="store_true", help="Don't flush directory 'log'")
 parser.add_argument("--local-chrome", action="store_true", help="Use local 'Google Chrome' and not 'Firefox'")
+parser.add_argument("--remote-edge", action="store_true", help="Use remote edge")
+parser.add_argument("--remote-firefox", action="store_true", help="Use remote firefox")
+parser.add_argument("--remote-chrome", action="store_true", help="Use remote chrome")
+parser.add_argument("--remote-host", nargs=1, type=str, default=["127.0.0.1"], help="Default is 127.0.0.1")
+parser.add_argument("--remote-port", nargs=1, type=int, default=[4444], help="Default is 4444")
+parser.add_argument("--pre-bash", nargs=1, type=str)
+parser.add_argument("--post-bash", nargs=1, type=str)
 parser.add_argument("--ssl", action="store_true", help="Enforce valid SSL certificates (default without is ignoring SSL warnings, self-signed, ...)")
 parser.add_argument("--debug", action="store_true", help="If an error occurs 'go interactive' and keep the window instead of shutting down")
 parser.add_argument("--trace", action="store_true", help="If an error occurs also show a ASCII/src traceback")
@@ -53,7 +61,11 @@ parser.add_argument("--force", action="store_true", help="Use with caution (for 
 parser.add_argument("--version", action="store_true", help="Show version and exit (no play.js running)")
 parser.add_argument("--update", action="store_true", help="Compare with PyPI version and exit (no play.js running)")
 
+CONSOLE = Console()
+from rich.pretty import pprint as PP
+
 args = parser.parse_args()
+
 
 
 if args.version:
@@ -71,7 +83,6 @@ if args.update:
     sys.exit(0)
 
 
-CONSOLE = Console()
 
 FORMAT = '%(asctime)s+00:00 %(levelname)10s: %(message)-80s    (%(filename)s,%(funcName)s:%(lineno)s)'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
@@ -108,34 +119,70 @@ if args.gen:
         sys.exit(0)
 # ==================================================================================== special case "gen" end
 
-default_wait = 30
-opts = FFOptions()
 
+
+if args.pre_bash == None:
+    logging.info("no PRE task")
+else:
+    pre_task = """/bin/bash -c '%s'""" % args.pre_bash[0]
+    logging.info("PRE task is %s" % pre_task)
+    pre_task_res = subprocess.check_output(pre_task, shell=True, universal_newlines=True)
+    logging.info("PRE task output: %s" % pre_task_res)
+
+
+
+default_wait = 30
+
+# firefox is default
+opts = FFOptions()
 if args.no_dev == False:
     opts.add_argument("-devtools")
-
-opts.set_preference('media.mediasource.enabled', False)
 if args.ssl:
     opts.accept_insecure_certs = False
 else:
     opts.accept_insecure_certs = True
-
-#opts = EDOptions()
-#opts = CHOptions()
-
-#driver = webdriver.Remote(command_executor="http://127.0.0.1:4444/wd/hub", options=opts)
+opts.set_preference('media.mediasource.enabled', False)
+opts.set_preference("print.always_print_silent", True)
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_paper_id", "iso_a4")
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_paper_height", "297.000")
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_paper_width", "210.000")
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_to_file", True)
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_paper_size_unit", 1)
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_edge_bottom", 15)
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_edge_top", 15)
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_edge_left", 15)
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_edge_right", 15)
+opts.set_preference("print.printer_Mozilla_Save_to_PDF.print_to_filename", "a.pdf")
+opts.set_preference("print_printer", "Mozilla Save to PDF")
 
 driver_mode = "local-firefox"
 driver = None
+
+if args.remote_edge:
+    driver_mode = "remote-edge"
+    opts = EDOptions()
+    opts.add_argument("--inprivate")
+    ce = "http://%s:%s/wd/hub" % (args.remote_host[0], str(args.remote_port[0]))
+    logging.info("CE=%s" % ce)
+    driver = webdriver.Remote(command_executor=ce, options=opts)
+
+if args.remote_firefox:
+    driver_mode = "remote-firefox"
+    ce = "http://%s:%s/wd/hub" % (args.remote_host[0], str(args.remote_port[0]))
+    logging.info("CE=%s" % ce)
+    driver = webdriver.Remote(command_executor=ce, options=opts)
+
 if args.local_chrome:
     driver_mode = "local-chrome"
     chrome_options = CHOptions()
     if args.ssl == False:
         chrome_options.add_argument('ignore-certificate-errors')
     driver = webdriver.Chrome(options=chrome_options)
-else:
+
+if driver == None:
     driver = webdriver.Firefox(options=opts)
 
+logging.info("DRIVER-MODE: %s" % driver_mode)
 
 logbasedir = os.path.join("log", driver_mode, sys.platform.lower() + "-" + datetime.datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 os.makedirs(logbasedir, exist_ok=False)
@@ -265,6 +312,7 @@ if os.path.isfile("play.js"):
 
     play = json.loads(open("play.js", "r").read())
     play_part_i = 0
+    wait_lel_clickable = False
     for play_part in play:
         ppl = len(play_part) # play part length
         play_part_i+=1
@@ -276,15 +324,34 @@ if os.path.isfile("play.js"):
 
             #pre tasks
             viewport_png_in = os.path.join(logdir_viewport_img, 'part-%08d-in.png' % play_part_i)
-            driver.save_screenshot(viewport_png_in)
+            if args.no_img == False:
+                driver.save_screenshot(viewport_png_in)
 
-            if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
-                full_png_in = os.path.join(logdir_full_img, 'part-%08d-in.png' % play_part_i)
-                driver.save_full_page_screenshot(full_png_in)
+            if args.no_img == False:
+                if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
+                    full_png_in = os.path.join(logdir_full_img, 'part-%08d-in.png' % play_part_i)
+                    driver.save_full_page_screenshot(full_png_in)
 
             unknown_command = True
             if play_part[0] == None:
                 
+                if play_part[1] == "down": ###ntcommand
+                    down_px = play_part[2]
+                    driver.execute_script("window.scrollBy(0,%d);" % int(down_px))
+                    unknown_command=False
+
+                if play_part[1] == "pdf": ###ntcommand
+                    pdf_filename = play_part[2]
+                    driver.execute_script("window.print();")
+                    unknown_command=False
+
+                if play_part[1] == "clickjs": ###ntcommand
+                    element_id = play_part[2]
+                    driver.execute_script("console.log('click');")
+                    driver.execute_script("console.log(document.getElementById(arguments[0]));")
+                    driver.execute_script("document.getElementById(arguments[0]).click();", element_id)
+                    unknown_command=False
+
                 if play_part[1] == "bash": ###ntcommand
                     bash_command = expand_column(play_part, 2)
                     logging.info("Will execute bash with '%s'" % bash_command)
@@ -376,6 +443,10 @@ if os.path.isfile("play.js"):
                     interactive_break()
                     unknown_command=False
 
+                if play_part[1] == "clickable":###ntcommand
+                    wait_lel_clickable = True
+                    unknown_command=False
+
                 if play_part[1] == "click_any_const":###ntcommand
                     any_consts = [x for x in play_part[2:]]
                     constructed_xpath = "//*[" + " or ".join(["text()=\"%s\"" % x for x in any_consts]) + "]"
@@ -413,6 +484,12 @@ if os.path.isfile("play.js"):
                     reg_write(varname, res)
                     unknown_command=False
 
+                # if play_part[1] == "shadow_setvalue":###ntcommand
+                #     shadow_element_id = play_part[2]
+                #     data_to_set = expand_column(play_part, 3)
+                #     shadow_element = driver.execute_script('this.shadowRoot.getElementById(arguments[0]).value = arguments[1];', shadow_element_id, data_to_set)
+                #     unknown_command=False
+
                 # if play_part[1] == "a":###ntcommand
                 #     varname = play_part[2]
                 #     res="\n".join(get_all_a_href())
@@ -427,11 +504,20 @@ if os.path.isfile("play.js"):
                     unknown_command=False
                 else:
 
-                    if play_part[0].startswith("id:"):
-                        target_id = play_part[0][3:]
-                        lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.ID, target_id))
+                    if wait_lel_clickable:
+                        wait_lel_clickable = False
+                        if play_part[0].startswith("id:"):
+                            target_id = play_part[0][3:]
+                            EC.element_to_be_clickable
+                            lel = WDW(driver=driver, timeout=default_wait).until(EC.element_to_be_clickable((BY.ID, target_id)))
+                        else:
+                            lel = WDW(driver=driver, timeout=default_wait).until(EC.element_to_be_clickable((BY.XPATH, play_part[0])))
                     else:
-                        lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, play_part[0]))
+                        if play_part[0].startswith("id:"):
+                            target_id = play_part[0][3:]
+                            lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.ID, target_id))
+                        else:
+                            lel = WDW(driver=driver, timeout=default_wait).until(lambda x: x.find_elements(BY.XPATH, play_part[0]))
 
                     # if play_part[1] == "a":###tcommand
                     #     varname = play_part[2]
@@ -463,7 +549,7 @@ if os.path.isfile("play.js"):
                         unknown_command=False
 
                     if play_part[1] == "siv":###tcommand
-                        driver.execute_script("arguments[0].scrollIntoView(true);", lel[0])
+                        driver.execute_script("arguments[0].scrollIntoView(false);", lel[0])
                         time.sleep(1);
                         unknown_command=False
 
@@ -540,11 +626,13 @@ if os.path.isfile("play.js"):
 
             #post tasks
             viewport_png_out = os.path.join(logdir_viewport_img, 'part-%08d-out.png' % play_part_i)
-            driver.save_screenshot(viewport_png_out)
+            if args.no_img == False:
+                driver.save_screenshot(viewport_png_out)
 
-            if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
-                full_png_out = os.path.join(logdir_full_img, 'part-%08d-out.png' % play_part_i)
-                driver.save_full_page_screenshot(full_png_out)
+            if args.no_img == False:
+                if callable(hasattr(driver, 'save_full_page_screenshot')): # only firefox has it
+                    full_png_out = os.path.join(logdir_full_img, 'part-%08d-out.png' % play_part_i)
+                    driver.save_full_page_screenshot(full_png_out)
 
         except Exception as exc:
             logging.error(exc)
@@ -555,6 +643,8 @@ if os.path.isfile("play.js"):
                 interactive_break()
             break
 
+    
+
 # end of for in parts...
 
 # driver.save_screenshot("test.png")
@@ -563,3 +653,11 @@ logging.info("finished")
 
 if args.log == False:
     shutil.rmtree(logbasedir)
+
+if args.post_bash == None:
+    logging.info("no POST task")
+else:
+    post_task = """/bin/bash -c '%s'""" % args.post_bash[0]
+    logging.info("POST task is %s" % pre_task)
+    post_task_res = subprocess.check_output(post_task, shell=True, universal_newlines=True)
+    logging.info("POST task output: %s" % post_task_res)
