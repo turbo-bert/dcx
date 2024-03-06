@@ -47,6 +47,7 @@ parser.add_argument("--no-dev", action="store_true", help="Disable Developer Too
 parser.add_argument("--no-img", action="store_true", help="Disable screenshots")
 parser.add_argument("--log", action="store_true", help="Don't flush directory 'log'")
 parser.add_argument("--local-chrome", action="store_true", help="Use local 'Google Chrome' and not 'Firefox'")
+parser.add_argument("--local-edge", action="store_true", help="Use local 'Google Chrome' and not 'Firefox'")
 parser.add_argument("--remote-edge", action="store_true", help="Use remote edge")
 parser.add_argument("--remote-firefox", action="store_true", help="Use remote firefox")
 parser.add_argument("--remote-chrome", action="store_true", help="Use remote chrome")
@@ -179,6 +180,11 @@ if args.local_chrome:
         chrome_options.add_argument('ignore-certificate-errors')
     driver = webdriver.Chrome(options=chrome_options)
 
+if args.local_edge:
+    driver_mode = "local-edge"
+    chrome_options = EDOptions()
+    driver = webdriver.Edge(options=chrome_options)
+
 if driver == None:
     driver = webdriver.Firefox(options=opts)
 
@@ -220,7 +226,7 @@ def content_provider_facade(src, provider_name=""):
     if provider_name == "bash":
         return subprocess.check_output("""/bin/bash -c '%s'""" % src, shell=True, universal_newlines=True)
     if provider_name == "env":
-        for k in envdata.keys():
+        for k in reversed(sorted(envdata.keys())): # to counter shorter prefixes
             kstring = "$" + k
             src = src.replace(kstring, envdata[k])
         return src
@@ -392,6 +398,46 @@ if os.path.isfile("play.js"):
                 if play_part[1] == "sam": ###ntcommand
                     sentence = play_part[2]
                     subprocess.call("""/bin/bash -c "say -v Samantha '%s'; exit 0" """ % sentence, shell=True)
+                    unknown_command=False
+
+                if play_part[1] == "msg": ###ntcommand
+                    info_text = play_part[2]
+                    msg_text = expand_column(play_part, 3)
+                    print("-"*64)
+                    print("")
+                    print(">>>>>>>> MSG: %s <<<<<<<<" % info_text)
+                    print("")
+                    print("%s" % msg_text)
+                    print("")
+                    print("-"*64)
+                    unknown_command=False
+
+                if play_part[1] == "copy": ###ntcommand
+                    info_text = play_part[2]
+                    msg_text = expand_column(play_part, 3)
+                    subprocess.run("pbcopy", input=msg_text.encode("utf-8"))
+                    logging.info("COPIED TO PASTEBIN")
+                    print("-"*64)
+                    print("")
+                    print(">>>>>>>> MSG: %s <<<<<<<<" % info_text)
+                    print("")
+                    print("%s" % msg_text)
+                    print("")
+                    print("-"*64)
+                    unknown_command=False
+
+                if play_part[1] == "copy1s": ###ntcommand
+                    info_text = play_part[2]
+                    msg_text = expand_column(play_part, 3)
+                    subprocess.run("pbcopy", input=msg_text.split("\n")[0].strip().encode("utf-8"))
+                    logging.info("COPIED TO PASTEBIN")
+                    print("-"*64)
+                    print("")
+                    print(">>>>>>>> MSG: %s <<<<<<<<" % info_text)
+                    print("")
+                    print("%s" % msg_text)
+                    print("")
+                    print("-"*64)
                     unknown_command=False
 
                 if play_part[1] == "max": ###ntcommand

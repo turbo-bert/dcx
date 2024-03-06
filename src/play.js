@@ -1,4 +1,5 @@
 [
     [null, "get", "https://google.de"],
-    ["//", null, "halt"]
+    [null, "copy1s", "Your key is:", "uptime", "bash"],
+    [null, "halt"]
 ]
