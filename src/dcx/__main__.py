@@ -196,6 +196,9 @@ os.makedirs(logbasedir, exist_ok=False)
 logdir_reg = os.path.join(logbasedir, "reg")
 os.makedirs(logdir_reg, exist_ok=False)
 
+logdir_cookies = os.path.join(logbasedir, "cookies")
+os.makedirs(logdir_cookies, exist_ok=False)
+
 logdir_viewport_img = os.path.join(logbasedir, "viewport-img")
 os.makedirs(logdir_viewport_img, exist_ok=False)
 
@@ -341,6 +344,37 @@ if os.path.isfile("play.js"):
             unknown_command = True
             if play_part[0] == None:
                 
+                if play_part[1] == "save_cookies": ###ntcommand
+                    cookies_dump_name = play_part[2]
+                    pwd_cookies = None
+                    try:
+                        pwd_cookies = play_part[3]
+                    except:
+                        pwd_cookies = None
+                    cookie_filename = os.path.join(logdir_cookies, cookies_dump_name)
+                    cookie_data = driver.get_cookies()
+                    with open(cookie_filename, 'w') as cookiefile:
+                        cookiefile.write(json.dumps(cookie_data, indent=4))
+                    if pwd_cookies != None:
+                        with open(pwd_cookies, 'w') as cookiefile:
+                            cookiefile.write(json.dumps(cookie_data, indent=4))
+                    cookie_data = None
+                    unknown_command=False
+
+                # if play_part[1] == "load_cookies": ###ntcommand
+                #     cookies_dump_name = play_part[2]
+                #     cookie_filename = os.path.join(logdir_cookies, cookies_dump_name)
+                #     #driver.execute_script("window.scrollBy(0,%d);" % int(down_px))
+                #     unknown_command=False
+
+                if play_part[1] == "init_cookies": ###ntcommand
+                    pwd_cookies = play_part[2]
+                    cookie_data = None
+                    with open(pwd_cookies, 'r') as cookiefile:
+                        cookie_data = json.loads(cookiefile.read())
+                        #driver.add_cookie()
+                    unknown_command=False
+
                 if play_part[1] == "down": ###ntcommand
                     down_px = play_part[2]
                     driver.execute_script("window.scrollBy(0,%d);" % int(down_px))
