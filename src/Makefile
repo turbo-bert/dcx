@@ -1,0 +1,2 @@
+default:
+	bash run.sh

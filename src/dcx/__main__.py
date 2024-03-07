@@ -53,6 +53,8 @@ parser.add_argument("--remote-firefox", action="store_true", help="Use remote fi
 parser.add_argument("--remote-chrome", action="store_true", help="Use remote chrome")
 parser.add_argument("--remote-host", nargs=1, type=str, default=["127.0.0.1"], help="Default is 127.0.0.1")
 parser.add_argument("--remote-port", nargs=1, type=int, default=[4444], help="Default is 4444")
+parser.add_argument("--unzip-profile", nargs=1, type=str, help="PK-Zipped profile contents (flat)")
+parser.add_argument("--zip-profile", metavar="FILENAME-WITH-.ZIP", nargs=1, type=str, help="ZIP Profile after execution")
 parser.add_argument("--pre-bash", nargs=1, type=str)
 parser.add_argument("--post-bash", nargs=1, type=str)
 parser.add_argument("--ssl", action="store_true", help="Enforce valid SSL certificates (default without is ignoring SSL warnings, self-signed, ...)")
@@ -159,6 +161,10 @@ opts.set_preference("print_printer", "Mozilla Save to PDF")
 driver_mode = "local-firefox"
 driver = None
 
+profiledir_actual = None
+abs_profile_dir = os.path.abspath("_profiles/main")
+os.makedirs(abs_profile_dir, exist_ok=True)
+
 if args.remote_edge:
     driver_mode = "remote-edge"
     opts = EDOptions()
@@ -186,7 +192,27 @@ if args.local_edge:
     driver = webdriver.Edge(options=chrome_options)
 
 if driver == None:
-    driver = webdriver.Firefox(options=opts)
+    if args.unzip_profile:
+        unzip_profile_filename = args.unzip_profile[0]
+        logging.info("*"*64)
+        logging.info("Unzipping profile %s" % unzip_profile_filename)
+        logging.info("*"*64)
+        if os.path.isdir(abs_profile_dir):
+            shutil.rmtree(abs_profile_dir)
+            os.makedirs(abs_profile_dir)
+        shutil.unpack_archive(unzip_profile_filename, abs_profile_dir)
+        from selenium.webdriver.firefox.firefox_profile import FirefoxProfile as FFProfile
+        ffprofile = FFProfile(abs_profile_dir)
+        opts.profile = ffprofile
+        driver = webdriver.Firefox(options=opts)
+    else:
+        driver = webdriver.Firefox(options=opts)
+    
+    profiledir_actual = driver.caps["moz:profile"]
+    #shutil.copyfile(os.path.join(profiledir_actual, "cookies.sqlite"), "cookies.sqlite")
+    logging.info("*"*64)
+    print(profiledir_actual)
+    logging.info("*"*64)
 
 logging.info("DRIVER-MODE: %s" % driver_mode)
 
@@ -198,6 +224,9 @@ os.makedirs(logdir_reg, exist_ok=False)
 
 logdir_cookies = os.path.join(logbasedir, "cookies")
 os.makedirs(logdir_cookies, exist_ok=False)
+
+logdir_profiles = os.path.join(logbasedir, "profiles")
+os.makedirs(logdir_profiles, exist_ok=False)
 
 logdir_viewport_img = os.path.join(logbasedir, "viewport-img")
 os.makedirs(logdir_viewport_img, exist_ok=False)
@@ -277,6 +306,10 @@ def break_handler(data):
             print("  %s = %s" % (x, reg_read(x)))
     if data == "q":
         print("QUIT")
+        if args.zip_profile:
+            postrun_profile_zip = args.zip_profile[0]
+            shutil.make_archive(postrun_profile_zip, "zip", profiledir_actual)
+
         driver.quit()
         if args.log == False:
             shutil.rmtree(logbasedir)
@@ -344,6 +377,14 @@ if os.path.isfile("play.js"):
             unknown_command = True
             if play_part[0] == None:
                 
+                if play_part[1] == "save_profile": ###ntcommand
+                    save_profile_name = play_part[2]
+                    profiledir_actual = driver.caps["moz:profile"]
+                    shutil.make_archive(save_profile_name, "zip", profiledir_actual)
+                    #shutil.copyfile(os.path.join(profiledir_actual, "cookies.sqlite"), "cookies.sqlite")
+                    #print(profiledir_actual)
+                    unknown_command=False
+                
                 if play_part[1] == "save_cookies": ###ntcommand
                     cookies_dump_name = play_part[2]
                     pwd_cookies = None
@@ -374,7 +415,7 @@ if os.path.isfile("play.js"):
                     with open(pwd_cookies, 'r') as cookiefile:
                         cookie_data = json.loads(cookiefile.read())
                         for cookie_item in cookie_data:
-                            driver.add_cookie(cookie_item)
+                            driver.manage().add_cookie(cookie_item)
                     unknown_command=False
 
                 if play_part[1] == "down": ###ntcommand
@@ -730,6 +771,11 @@ if os.path.isfile("play.js"):
 # end of for in parts...
 
 # driver.save_screenshot("test.png")
+
+if args.zip_profile:
+    postrun_profile_zip = args.zip_profile[0]
+    shutil.make_archive(postrun_profile_zip, "zip", profiledir_actual)
+
 driver.quit()
 logging.info("finished")
 
