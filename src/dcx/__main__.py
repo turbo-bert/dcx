@@ -370,9 +370,11 @@ if os.path.isfile("play.js"):
                 if play_part[1] == "init_cookies": ###ntcommand
                     pwd_cookies = play_part[2]
                     cookie_data = None
+                    driver.delete_all_cookies()
                     with open(pwd_cookies, 'r') as cookiefile:
                         cookie_data = json.loads(cookiefile.read())
-                        #driver.add_cookie()
+                        for cookie_item in cookie_data:
+                            driver.add_cookie(cookie_item)
                     unknown_command=False
 
                 if play_part[1] == "down": ###ntcommand

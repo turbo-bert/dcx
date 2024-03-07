@@ -1,5 +1,5 @@
 [
     [null, "get", "https://google.de"],
-    [null, "copy1s", "Your key is:", "uptime", "bash"],
+    [null, "save_cookies", "all", "cookies.js"],
     [null, "halt"]
 ]
