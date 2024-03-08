@@ -53,8 +53,8 @@ parser.add_argument("--remote-firefox", action="store_true", help="Use remote fi
 parser.add_argument("--remote-chrome", action="store_true", help="Use remote chrome")
 parser.add_argument("--remote-host", nargs=1, type=str, default=["127.0.0.1"], help="Default is 127.0.0.1")
 parser.add_argument("--remote-port", nargs=1, type=int, default=[4444], help="Default is 4444")
-parser.add_argument("--unzip-profile", nargs=1, type=str, help="PK-Zipped profile contents (flat)")
-parser.add_argument("--zip-profile", metavar="FILENAME-WITH-.ZIP", nargs=1, type=str, help="ZIP Profile after execution")
+parser.add_argument("--unzip-profile", nargs=1, type=str, help="PK-Zipped profile contents (flat) -- FIREFOX ONLY")
+parser.add_argument("--zip-profile", metavar="ZIP_PREFIX", nargs=1, type=str, help="ZIP Profile after execution (leave out the '.zip' !) -- FIREFOX ONLY")
 parser.add_argument("--pre-bash", nargs=1, type=str)
 parser.add_argument("--post-bash", nargs=1, type=str)
 parser.add_argument("--ssl", action="store_true", help="Enforce valid SSL certificates (default without is ignoring SSL warnings, self-signed, ...)")
@@ -63,6 +63,8 @@ parser.add_argument("--trace", action="store_true", help="If an error occurs als
 parser.add_argument("--force", action="store_true", help="Use with caution (for --gen)")
 parser.add_argument("--version", action="store_true", help="Show version and exit (no play.js running)")
 parser.add_argument("--update", action="store_true", help="Compare with PyPI version and exit (no play.js running)")
+parser.add_argument("--headless", action="store_true", help="Run local browsers headless")
+parser.add_argument("--ggs", action="store_true", help="Generate Google Search")
 
 CONSOLE = Console()
 from rich.pretty import pprint as PP
@@ -92,6 +94,25 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 logging.Formatter.converter = time.gmtime
 
 # ==================================================================================== special case "gen"
+if args.ggs:
+    if os.path.isfile("play.js") and args.force == False:
+        logging.info("Won't overwrite play.js")
+        sys.exit(1)
+    else:
+        with open('play.js', 'w') as f:
+            f.write("""[
+    [null, "get", "https://google.de"],
+    [null, "sleep", "2"],
+    ["/html/body/div[2]/div[3]/div[3]/span/div/div/div/div[3]/div[1]/button[2]/div", "click"],
+    ["//textarea[@title=\\"Suche\\"]", "input_type", "such data"],
+    ["//textarea[@title=\\"Suche\\"]", "submit"],
+    [null, "halt"]                    
+]
+
+""")
+        logging.info("play.js written successfully, terminating")
+        sys.exit(0)
+
 if args.gen:
     if os.path.isfile("play.js") and args.force == False:
         logging.info("Won't overwrite play.js")
@@ -192,6 +213,9 @@ if args.local_edge:
     driver = webdriver.Edge(options=chrome_options)
 
 if driver == None:
+    if args.headless:
+        opts.add_argument("--headless")
+    
     if args.unzip_profile:
         unzip_profile_filename = args.unzip_profile[0]
         logging.info("*"*64)
@@ -377,6 +401,13 @@ if os.path.isfile("play.js"):
             unknown_command = True
             if play_part[0] == None:
                 
+                if play_part[1] == "input_env": ###ntcommand
+                    input_env_var = play_part[2]
+                    input_env_caption = expand_column(play_part, 3)
+                    input_env_data = input(input_env_caption + ": ")
+                    envdata[input_env_var] = input_env_data.strip().split("\n")[0].strip()
+                    unknown_command=False
+
                 if play_part[1] == "save_profile": ###ntcommand
                     save_profile_name = play_part[2]
                     profiledir_actual = driver.caps["moz:profile"]
@@ -647,6 +678,38 @@ if os.path.isfile("play.js"):
                     #     res="\n".join(get_all_a_href(beneath=lel[0]))
                     #     reg_write(varname, res)
                     #     unknown_command=False
+
+                    if play_part[1] == "input_type": ###tcommand
+                        input_caption = expand_column(play_part, 2)
+                        print("*"*68)
+                        print("** %s" % input_caption)
+                        print("*"*68)
+                        print()
+                        input_data = input("$ ").strip().split("\n")[0].strip()
+                        print()
+                        print("*"*68)
+                        lel[0].send_keys(input_data)
+                        unknown_command=False
+
+                    if play_part[1] == "enter": ###tcommand
+                        lel[0].send_keys("\n")
+                        unknown_command=False
+
+                    if play_part[1] == "submit": ###tcommand
+                        lel[0].submit()
+                        unknown_command=False
+
+                    if play_part[1] == "input_setvalue": ###tcommand
+                        input_caption = expand_column(play_part, 2)
+                        print("*"*68)
+                        print("** %s" % input_caption)
+                        print("*"*68)
+                        print()
+                        input_data = input("$ ").strip().split("\n")[0].strip()
+                        print()
+                        print("*"*68)
+                        driver.execute_script("arguments[0].value = arguments[1];", lel[0], input_data)
+                        unknown_command=False
 
                     if play_part[1] == "reg_dom":###tcommand
                         varname = play_part[2]
