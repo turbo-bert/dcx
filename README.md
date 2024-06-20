@@ -4,6 +4,8 @@
 
 # Usage
 
+[manual/]
+
     python -m dcx --help
 
 # Support or Donate
