@@ -4,7 +4,7 @@
 
 # Usage
 
-[manual/]
+[manual](manual/README.md)
 
     python -m dcx --help
 
